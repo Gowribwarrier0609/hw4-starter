@@ -4,6 +4,14 @@ import numpy as np
 import tensorflow as tf
 
 
+# Keep the first run reproducible so classmates can compare results.
+# Change this number—or set it to None—to experiment with different runs.
+SEED = 1710
+if SEED is not None:
+    tf.keras.utils.set_random_seed(SEED)
+rng = np.random.default_rng(SEED)
+
+
 # ---------- 1) Tiny corpus (swap this block to change tasks) ----------
 tiny_lines = [
     "I like cats.",
@@ -69,7 +77,24 @@ def sample_logits(logits, temperature=1.0):
         return int(np.argmax(logits))
     logits = logits / temperature
     probabilities = tf.nn.softmax(logits).numpy()
-    return int(np.random.choice(len(probabilities), p=probabilities))
+    return int(rng.choice(len(probabilities), p=probabilities))
+
+
+def next_char_probabilities(seed="I like ", temperature=1.0, top_n=5):
+    """Return the most likely next characters for a prompt."""
+    seed = seed if len(seed) >= seq_len else (" " * (seq_len - len(seed)) + seed)
+    context = [stoi.get(c, 0) for c in seed[-seq_len:]]
+    x = np.array([context], dtype=np.int32)
+    logits = model.predict(x, verbose=0)[0]
+
+    if temperature <= 0:
+        probabilities = np.zeros_like(logits, dtype=np.float64)
+        probabilities[np.argmax(logits)] = 1.0
+    else:
+        probabilities = tf.nn.softmax(logits / temperature).numpy()
+
+    top_indices = np.argsort(probabilities)[-top_n:][::-1]
+    return [(itos[int(i)], float(probabilities[i])) for i in top_indices]
 
 
 def generate(seed="I like ", n_chars=200, temperature=0.7):
@@ -90,4 +115,9 @@ def generate(seed="I like ", n_chars=200, temperature=0.7):
 # ---------- 6) Try a few temperatures ----------
 for temperature in [0.1, 0.5, 0.7, 1.0]:
     print("\n=== Temperature", temperature, "===")
+    print("Top probabilities for the first generated character:")
+    for char, probability in next_char_probabilities(
+        seed="I like ", temperature=temperature
+    ):
+        print(f"  {char!r}: {probability:.1%}")
     print(generate(seed="I like ", n_chars=180, temperature=temperature))

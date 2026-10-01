@@ -83,7 +83,9 @@ TensorFlow is a large download, so installation may take a few minutes.
 python tiny_rnn.py
 ```
 
-The program prints the corpus, vocabulary, final training loss, and generated text at four temperatures. The output will vary from run to run.
+The program prints the corpus, vocabulary, final training loss, and generated text at four temperatures. Before each sample, it also shows the five most likely choices for the first generated character.
+
+The starter uses `SEED = 1710` so everyone can compare the same first run. Change that number—or set it to `None`—to see how random initialization and sampling change the result.
 
 ## If local setup gets stuck
 
