@@ -13,6 +13,7 @@ rng = np.random.default_rng(SEED)
 
 
 # ---------- 1) Tiny corpus (swap this block to change tasks) ----------
+# Small sample of inputs used for training the model
 tiny_lines = [
     "I like cats.",
     "I like dogs.",
@@ -34,6 +35,7 @@ text = "\n".join(tiny_lines)
 
 print("Corpus length:", len(text))
 chars = sorted(list(set(text)))
+# Create mapping from characters to indices (tokenization)and vice versa. This allows model to then work with the numerical representation of characters.
 stoi = {c: i for i, c in enumerate(chars)}
 itos = {i: c for c, i in stoi.items()}
 vocab_size = len(chars)
@@ -46,6 +48,7 @@ X_idx, y_idx = [], []
 for i in range(0, len(text) - seq_len, step):
     seq = text[i : i + seq_len]
     nxt = text[i + seq_len]
+    # Create training samples with input sequence (list of numbers representing the characters) and output (the next character in the sequence)
     X_idx.append([stoi[c] for c in seq])
     y_idx.append(stoi[nxt])
 
@@ -54,19 +57,25 @@ y = np.array(y_idx, dtype=np.int32)
 print("Num training samples:", len(X))
 
 # ---------- 3) Model ----------
+# Layers in the model is placed sequentially, so that data passes through each layer in order. There are 3 layers. 
 model = tf.keras.Sequential(
     [
+        #Layer 1: Giving each character a small set of numbers the model can learn. This allows the model to learn a continuous representation of characters.
         tf.keras.layers.Embedding(vocab_size, 32),
-        tf.keras.layers.LSTM(128),
+       #Layer 2: LSTM layer looks at characters in the sequence and learns patterns. 
+       tf.keras.layers.LSTM(128),
+        #Layer 3: Dense layer takes output from LSTM and predicts next character in the sequence and gives a score for each possible character.
         tf.keras.layers.Dense(vocab_size),
     ]
 )
 model.compile(
+    # Adam is set as optimizer for weights; Learning rate is set to 0.01; Loss compares model's score with the correct next character
     optimizer=tf.keras.optimizers.Adam(1e-2),
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
 )
 
 # ---------- 4) Train (tiny & fast) ----------
+#Training process history & loss values are stored in the variable history. The final loss value gives an indication of how well the model has learned to predict the next character in the sequence
 history = model.fit(X, y, batch_size=64, epochs=20, verbose=0)
 print("Final loss:", history.history["loss"][-1])
 
@@ -75,6 +84,7 @@ print("Final loss:", history.history["loss"][-1])
 def sample_logits(logits, temperature=1.0):
     if temperature <= 0:  # greedy
         return int(np.argmax(logits))
+    #By dividing logits by temperature, we can control the randomness of sampling. A lower temperature will make the model's choices more concentrated, while a higher temperature will make it more exploratory.
     logits = logits / temperature
     probabilities = tf.nn.softmax(logits).numpy()
     return int(rng.choice(len(probabilities), p=probabilities))
@@ -113,6 +123,7 @@ def generate(seed="I like ", n_chars=200, temperature=0.7):
 
 
 # ---------- 6) Try a few temperatures ----------
+# Compare the results of different levels of randomness allowed (via temperatures). Lower temperatures produce more likely characters, while higher temperatures produce more varied choices.
 for temperature in [0.1, 0.5, 0.7, 1.0]:
     print("\n=== Temperature", temperature, "===")
     print("Top probabilities for the first generated character:")
