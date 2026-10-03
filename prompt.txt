@@ -1,14 +1,15 @@
 High-level description of the code:
 - This is a tiny program (model) that learns from a few input text lines, and then predicts and generates new text one character at a time.
-- For training, the model uses a small list of sentences such as "I like cats.", "I like dogs.", and "I like noodles."
+- For training, the model uses a small list of 10 different short sentences, each following the pattern "I like [one word].", such as "I like cats.", "I like dogs.", and "I like noodles."
 - The sentences are combined into training text. The model treats the text as individual characters, and each unique character is assigned a numerical ID.
-- The model learns to predict the next character based on a sequence of previous characters.
+- The model should use an LSTM-based recurrent neural network to process a sequence of previous characters and predict the next character.
 - During training, the model takes 40-character windows from the training text and tries to predict the character that comes immediately after each window. It compares its prediction with the actual next character, then moves forward by one character and repeats the process.
 - The model trains the neural network using these training examples over multiple rounds. Each time, it compares its prediction with the correct next character and adjusts its internal weights to improve. The printed final loss gives a rough measure of how wrong its predictions were at the end; lower generally means better predictions on the training text.
-- After training, the model can generate new text starting from a prompt such as "I like ". It predicts one new character at a time using the weights it learned during training, adds that character to the text, and continues generating a fixed-length sample.
+- After training, the model generates new text starting from the prompt "I like ". The prompt is padded to form a 40-character context. The model predicts one new character at a time, adds that character to the context, and continues using the most recent 40 characters to predict the next character.
 
 Demo behavior:
 - Before generation, the program prints the corpus length, vocabulary, number of training samples, and final loss.
 - It generates text using temperatures 0.1, 0.5, 0.7, and 1.0.
 - A lower temperature makes the model's choices more concentrated around likely characters, while a higher temperature makes the output more varied and exploratory.
+- Before generating each sample, the program shows the most likely next characters for the starting prompt and their probabilities.
 - For each temperature, the model generates a block of sample text starting with "I like ", showing how the output changes as temperature increases.
